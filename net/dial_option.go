@@ -30,7 +30,7 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-var supportedDialProxyTypes = []string{"socks5", "http", "ntlm"}
+var supportedDialProxyTypes = []string{"socks5", "http", "ntlm", "https"}
 
 type ProxyAuth struct {
 	Username string
@@ -142,6 +142,18 @@ func WithProxy(proxyType string, address string) DialOption {
 				conn, err := ntlmHTTPProxyAfterHook(ctx, c, addr)
 				return ctx, conn, err
 			}
+		case "https":
+			hook = func(ctx context.Context, c net.Conn, addr string) (context.Context, net.Conn, error) {
+				conn, err := httpProxyAfterHook(ctx, c, addr)
+				return ctx, conn, err
+			}
+			do.afterHooks = append(
+				do.afterHooks, AfterHook{
+					Priority: 110,
+					Hook:     hook,
+				},
+			)
+			return
 		}
 
 		if hook != nil {
